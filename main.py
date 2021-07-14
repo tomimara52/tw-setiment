@@ -29,34 +29,49 @@ class SentimentBot:
         
         return analyzer.polarity_scores(text)
     
-    def get_user_last_tweet(self, name):
+    def get_user_tweets(self, name, n_of_tweets):
         user_id = self.api.get_user(name).id
-        last_tweet = self.api.user_timeline(user_id=user_id, count=1,
-                                            exclude_replies=True, include_rts=False)[0]
+        tweets = self.api.user_timeline(user_id=user_id, count=n_of_tweets,
+                                            exclude_replies=True, include_rts=False)
         
-        return last_tweet
+        return tweets
     
-    def emotion_of_user(self, user_name):
-        user_tweet = self.get_user_last_tweet(user_name).text
+    def emotion_of_user(self, user_name, n_of_tweets):
+        tweets = self.get_user_tweets(user_name, n_of_tweets)
+        tweets = [tw.text for tw in tweets]
         
-        tweet_translated = self.translate(user_tweet)
+        tweets_translated = [self.translate(tw) for tw in tweets]
         
-        return (user_tweet, tweet_translated, self.get_sentiment(tweet_translated))
+        tweets_sentiment= [self.get_sentiment(tw) for tw in tweets_translated]
+        
+        return (tweets, tweets_translated, tweets_sentiment)
     
-    def print_results(self, user_name):
-        tweet, tweet_translated, emotions= self.emotion_of_user(user_name)
+    def print_results(self, user_name, n_of_tweets=1):
+        tweets, tweets_translated, tweets_sentiments= self.emotion_of_user(user_name, n_of_tweets)
         
-        print(f'Tweet from {user_name} analyzed: {tweet}')
+        compound_scores = []
         
-        compound_score = emotions['compound']
-        print(f"Compound score:{compound_score}")
-        if compound_score >= 0.05:
-            print('The tweet has a positive sentiment')
-        elif -0.05 < compound_score < 0.05:
-            print('The tweet has a neutral sentiment')
-        elif compound_score <= 0.05:
-            print('The tweet has a negative sentiment')
+        """
+        for tw in tweets_translated:
+           print(tw)
+        """
+        
+        print(f'Tweets from {user_name} analyzed:')
+        for i, tw in enumerate(tweets):
+            compound_score = tweets_sentiments[i]['compound']
+            compound_scores.append(compound_score)
+            
+            print("{:-<65} {}".format(tw, compound_score))
+            
+        compound_mean = sum(compound_scores)/len(compound_scores)
+        print(f"Compound score mean:{compound_mean}")
+        if compound_mean >= 0.05:
+            print('The tweets have a positive sentiment')
+        elif -0.05 < compound_mean < 0.05:
+            print('The tweets have a neutral sentiment')
+        elif compound_mean <= 0.05:
+            print('The tweets have a negative sentiment')
 
 
 bot = SentimentBot(keys.API_KEY, keys.API_SECRET_KEY)
-bot.print_results('AriasMarti_')
+bot.print_results('AriasMarti_', 10)
