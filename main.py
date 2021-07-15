@@ -1,3 +1,4 @@
+import sys
 import requests
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import tweepy
@@ -93,6 +94,23 @@ class SentimentBot:
         elif compound_mean <= 0.05:
             print(sent_display_str.format(neg))
 
-
-bot = SentimentBot(keys.API_KEY, keys.API_SECRET_KEY)
-bot.make_report('some_user', 10)
+if __name__ == '__main__':
+    bot = SentimentBot(keys.API_KEY, keys.API_SECRET_KEY)
+    args = sys.argv
+    
+    n_of_tweets = 1
+    
+    try: 
+        user_name = args[1]
+    except IndexError as err:
+        print('You have to give an user name as argument')
+        sys.exit(1)
+        
+    if len(args) > 2:
+        try:
+            n_of_tweets = int(args[2])
+        except ValueError as err:
+            print('The second argument must be an int')
+            sys.exit(2)
+        
+    bot.make_report(user_name, n_of_tweets)
