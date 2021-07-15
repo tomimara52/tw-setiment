@@ -9,6 +9,7 @@ class SentimentBot:
     def __init__(self, key, secret_key):
         auth =  tweepy.AppAuthHandler(key, secret_key)
         self.api = tweepy.API(auth)
+        self.translation_keys = [keys.RAPID_API_KEY, keys.RAPID_API_HOST]
     
     def translate(self, text):
         url = "https://translated-mymemory---translation-memory.p.rapidapi.com/api/get"
@@ -16,8 +17,8 @@ class SentimentBot:
         querystring = {"q": text.encode("utf-8"),"langpair": "es|en"}
 
         headers = {
-            'x-rapidapi-key': "1fe44fdc00msh0466f0e4f33b7b0p195ab4jsn7d0ff6ad3990",
-            'x-rapidapi-host': "translated-mymemory---translation-memory.p.rapidapi.com"
+            'x-rapidapi-key': self.translation_keys[0],
+            'x-rapidapi-host': self.translation_keys[1]
             }
         
         response = requests.request("GET", url, params=querystring, headers=headers)
@@ -36,18 +37,20 @@ class SentimentBot:
         
         return tweets
     
-    def emotion_of_user(self, user_name, n_of_tweets):
+    def emotion_of_user(self, user_name, n_of_tweets, is_spanish):
         tweets = self.get_user_tweets(user_name, n_of_tweets)
         tweets = [tw.text for tw in tweets]
         
-        tweets_translated = [self.translate(tw) for tw in tweets]
+        tweets_translated = tweets
+        if is_spanish:
+            tweets_translated = [self.translate(tw) for tw in tweets]
         
         tweets_sentiment= [self.get_sentiment(tw) for tw in tweets_translated]
         
         return (tweets, tweets_translated, tweets_sentiment)
     
-    def print_results(self, user_name, n_of_tweets=1):
-        tweets, tweets_translated, tweets_sentiments= self.emotion_of_user(user_name, n_of_tweets)
+    def make_report(self, user_name, n_of_tweets=1, is_spanish=True):
+        tweets, _, tweets_sentiments= self.emotion_of_user(user_name, n_of_tweets, is_spanish)
         
         compound_scores = []
         
@@ -56,22 +59,40 @@ class SentimentBot:
            print(tw)
         """
         
-        print(f'Tweets from {user_name} analyzed:')
+        if is_spanish:
+            print(f'Tweets de {user_name} analizados:\n')
+        else:
+            print(f'Tweets from {user_name} analyzed:')
         for i, tw in enumerate(tweets):
             compound_score = tweets_sentiments[i]['compound']
             compound_scores.append(compound_score)
             
             print("{:-<65} {}".format(tw, compound_score))
+        print('\n', end='') 
             
         compound_mean = sum(compound_scores)/len(compound_scores)
-        print(f"Compound score mean:{compound_mean}")
+        
+        if is_spanish:
+            mean_display_str = f'Media de puntaje compuesto: {compound_mean}'
+            sent_display_str = 'Los tweets tienen un sentimiento {}'
+            pos = 'positivo'
+            neu = 'neutral'
+            neg = 'negativo'
+        else:
+            mean_display_str = f'Compound score mean: {compound_mean}'
+            sent_display_str = 'The tweets have a {} sentiment'
+            pos = 'positive'
+            neu = 'neutral'
+            neg = 'negative'
+            
+        print(mean_display_str)
         if compound_mean >= 0.05:
-            print('The tweets have a positive sentiment')
+            print(sent_display_str.format(pos))
         elif -0.05 < compound_mean < 0.05:
-            print('The tweets have a neutral sentiment')
+            print(sent_display_str.format(neu))
         elif compound_mean <= 0.05:
-            print('The tweets have a negative sentiment')
+            print(sent_display_str.format(neg))
 
 
 bot = SentimentBot(keys.API_KEY, keys.API_SECRET_KEY)
-bot.print_results('AriasMarti_', 10)
+bot.make_report('AriasMarti_', 10)
