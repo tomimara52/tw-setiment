@@ -95,4 +95,4 @@ class SentimentBot:
 
 
 bot = SentimentBot(keys.API_KEY, keys.API_SECRET_KEY)
-bot.make_report('AriasMarti_', 10)
+bot.make_report('some_user', 10)
