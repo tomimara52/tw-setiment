@@ -34,7 +34,7 @@ class SentimentBot:
     def get_user_tweets(self, name, n_of_tweets):
         user_id = self.api.get_user(name).id
         tweets = self.api.user_timeline(user_id=user_id, count=n_of_tweets,
-                                            exclude_replies=True, include_rts=False)
+                                            exclude_replies=True)
         
         return tweets
     
@@ -56,7 +56,7 @@ class SentimentBot:
         compound_scores = []
         
         """
-        for tw in tweets_translated:
+        for tw in _:
            print(tw)
         """
         
